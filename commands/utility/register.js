@@ -4,7 +4,7 @@ const sql = require('mssql');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('register')
-        .setDescription('Register with your password')
+        .setDescription('Register with your password * Note! At the registration, password won`t be shown')
         .addStringOption(option =>
             option.setName('password')
                 .setDescription('Your password')
