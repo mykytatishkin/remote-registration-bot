@@ -2,11 +2,16 @@ const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('example')
-        .setDescription('Example command that interacts with the database'),
+        .setName('userlist')
+        .setDescription('Command will show all users from database, only for developers'),
     async execute(interaction, pool) {
+        // Check if the user has the "ADMINISTRATOR" permission
+        if (!interaction.member.permissions.has('ADMINISTRATOR')) {
+            return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+        }
+
         try {
-            const result = await pool.request().query('SELECT * FROM your_table');
+            const result = await pool.request().query('SELECT discordId, discordUsername, registrationDate, updateProfileDate FROM users;');
             const records = result.recordset;
 
             if (records.length === 0) {
