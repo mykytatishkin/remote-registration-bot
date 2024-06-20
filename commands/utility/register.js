@@ -15,6 +15,7 @@ module.exports = {
         const discordUsername = interaction.user.username;
         const registrationDate = new Date();
         const updateProfileDate = new Date();
+        const roleId = '1251847741382983720'; // Replace with the ID of the role you want to assign
 
         const checkQuery = `
             SELECT COUNT(*) as count FROM users WHERE discordId = @discordId
@@ -29,14 +30,19 @@ module.exports = {
             const request = pool.request();
             request.input('discordId', sql.VarChar(20), discordId);
 
-            // Проверка наличия пользователя
+            // Check if user already exists
             const checkResult = await request.query(checkQuery);
-            if (checkResult.recordset[0].count > 0) {
-                await interaction.reply({ content: 'You are already registered.', ephemeral: true });
+            const userExists = checkResult.recordset[0].count > 0;
+
+            if (userExists) {
+                // If the user is already registered, assign the role and notify them
+                const member = await interaction.guild.members.fetch(discordId);
+                await member.roles.add(roleId);
+                await interaction.reply({ content: 'You are already registered. Role has been assigned to you!', ephemeral: true });
                 return;
             }
 
-            // Вставка данных
+            // Insert new user data
             request.input('discordUsername', sql.VarChar(128), discordUsername);
             request.input('password', sql.VarChar(120), password);
             request.input('registrationDate', sql.DateTime, registrationDate);
@@ -44,7 +50,11 @@ module.exports = {
 
             await request.query(insertQuery);
 
-            await interaction.reply('You have been successfully registered!');
+            // Assign role to the new user
+            const member = await interaction.guild.members.fetch(discordId);
+            await member.roles.add(roleId);
+
+            await interaction.reply('You have been successfully registered and assigned a role!');
         } catch (error) {
             console.error('SQL error:', error);
             await interaction.reply({ content: 'There was an error while registering. Please try again later.', ephemeral: true });
