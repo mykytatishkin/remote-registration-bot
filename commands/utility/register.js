@@ -39,6 +39,9 @@ module.exports = {
                 const member = await interaction.guild.members.fetch(discordId);
                 await member.roles.add(roleId);
                 await interaction.reply({ content: 'You are already registered. Role has been assigned to you!', ephemeral: true });
+
+                // Log registration attempt
+                console.log(`[${new Date().toISOString()}][${discordId}][${discordUsername}] attempted to register (already registered)`);
                 return;
             }
 
@@ -55,9 +58,15 @@ module.exports = {
             await member.roles.add(roleId);
 
             await interaction.reply('You have been successfully registered and assigned a role!');
+
+            // Log registration
+            console.log(`[${new Date().toISOString()}][${discordId}][${discordUsername}] successfully registered`);
         } catch (error) {
             console.error('SQL error:', error);
             await interaction.reply({ content: 'There was an error while registering. Please try again later.', ephemeral: true });
+
+            // Log registration error
+            console.error(`[${new Date().toISOString()}][${discordId}][${discordUsername}] registration error:`, error);
         }
     },
 };
