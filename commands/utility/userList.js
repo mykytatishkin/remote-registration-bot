@@ -1,13 +1,14 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionsBitField } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('userlist')
-        .setDescription('Command will show all users from database, only for developers'),
+        .setDescription('Команда выводит список всех пользователей из базы данных, только для разработчиков.'),
     async execute(interaction, pool) {
-        // Check if the user has the "ADMINISTRATOR" permission
-        if (!interaction.member.permissions.has('ADMINISTRATOR')) {
-            return interaction.reply({ content: 'You do not have permission to use this command.', ephemeral: true });
+        // Проверяем, есть ли у пользователя права администратора
+        if (!interaction.member.permissions.has(PermissionsBitField.Flags.Administrator)) {
+            // Изменяем флаг ephemeral на false, чтобы сообщение было видимым в чате
+            return interaction.reply({ content: 'У вас нет прав для использования этой команды.', ephemeral: false });
         }
 
         try {
@@ -15,15 +16,15 @@ module.exports = {
             const records = result.recordset;
 
             if (records.length === 0) {
-                await interaction.reply('No records found.');
+                await interaction.reply('Записи не найдены.');
             } else {
-                // Convert each record to a string and join them with new lines
+                // Преобразуем каждую запись в строку и объединим их с помощью переносов строк
                 const formattedRecords = records.map(record => JSON.stringify(record, null, 2)).join('\n\n');
-                await interaction.reply(`Query result:\n${formattedRecords}`);
+                await interaction.reply(`Результат запроса:\n${formattedRecords}`);
             }
         } catch (err) {
-            console.error('SQL query error:', err);
-            await interaction.reply({ content: 'There was an error executing the query.', ephemeral: true });
+            console.error('Ошибка SQL-запроса:', err);
+            await interaction.reply({ content: 'При выполнении запроса произошла ошибка.', ephemeral: true });
         }
     },
 };
