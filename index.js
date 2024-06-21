@@ -41,28 +41,54 @@ async function initializeDatabase() {
 }
 
 client.on(Events.InteractionCreate, async interaction => {
-    if (!interaction.isChatInputCommand()) return;
+    if (interaction.isChatInputCommand()) {
+        const command = interaction.client.commands.get(interaction.commandName);
 
-    const command = interaction.client.commands.get(interaction.commandName);
-
-    if (!command) {
-        console.error(`No command matching ${interaction.commandName} was found.`);
-        return;
-    }
-
-    try {
-        if (!dbPool) throw new Error('Database connection is not established.');
-        await command.execute(interaction, dbPool);
-    } catch (error) {
-        console.error('Error executing command:', error);
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
-        } else {
-            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        if (!command) {
+            console.error(`No command matching ${interaction.commandName} was found.`);
+            return;
         }
-        if (error.message.includes('Database connection is not established')) {
-            console.log('Attempting to reinitialize database connection...');
-            initializeDatabase(); // Try to reconnect to the database
+
+        try {
+            if (!dbPool) throw new Error('Database connection is not established.');
+            await command.execute(interaction, dbPool);
+        } catch (error) {
+            console.error('Error executing command:', error);
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+            } else {
+                await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+            }
+            if (error.message.includes('Database connection is not established')) {
+                console.log('Attempting to reinitialize database connection...');
+                initializeDatabase(); // Try to reconnect to the database
+            }
+        }
+    } else if (interaction.isModalSubmit()) {
+        // Handle modal submissions
+        console.log('Modal submission received');  // Debug log
+
+        const command = interaction.client.commands.get(interaction.customId.replace('Modal', ''));
+
+        if (!command) {
+            console.error(`No command matching ${interaction.customId.replace('Modal', '')} was found.`);
+            return;
+        }
+
+        try {
+            if (!dbPool) throw new Error('Database connection is not established.');
+            await command.handleModalSubmission(interaction, dbPool);
+        } catch (error) {
+            console.error('Error executing modal submit:', error);
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
+            } else {
+                await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+            }
+            if (error.message.includes('Database connection is not established')) {
+                console.log('Attempting to reinitialize database connection...');
+                initializeDatabase(); // Try to reconnect to the database
+            }
         }
     }
 });
